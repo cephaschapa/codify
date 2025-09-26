@@ -3,6 +3,7 @@ import {
   DetectedElement,
   PageSection,
 } from "./imageAnalysis";
+import { generateChakraV3Code } from "./chakraV3Generator";
 
 export interface GeneratedPage {
   fullPageCode: string;
@@ -44,8 +45,8 @@ export function generatePageLayout(
   // Generate full page layout
   const fullPageCode = generateFullPageCode(pageLayout, sections, colors);
 
-  // Generate component version (for the existing tab)
-  const componentCode = generateComponentVersion(analysis);
+  // Generate component version (for the existing tab) using v3 patterns
+  const componentCode = generateComponentVersionV3(analysis);
 
   return {
     fullPageCode,
@@ -328,6 +329,11 @@ function generateFullPageCode(
   return pageCode;
 }
 
+function generateComponentVersionV3(analysis: ImageAnalysisResult): string {
+  // Use the proper v3 generator instead of old v2 patterns
+  return generateChakraV3Code(analysis);
+}
+
 function generateComponentVersion(analysis: ImageAnalysisResult): string {
   // This is the existing component generation for the "Component" tab
   const { colors, elements, layout } = analysis;
@@ -360,11 +366,11 @@ function generateComponentVersion(analysis: ImageAnalysisResult): string {
 function generateFallbackComponent(
   analysis: ImageAnalysisResult
 ): GeneratedPage {
-  const componentCode = generateComponentVersion(analysis);
+  const componentCode = generateChakraV3Code(analysis);
   return {
     fullPageCode: componentCode,
     componentCode,
-    imports: `import { Box, Text, VStack } from '@chakra-ui/react';\n\n`,
+    imports: `import { Box, Text, Stack } from '@chakra-ui/react';\n\n`,
     sections: {},
   };
 }

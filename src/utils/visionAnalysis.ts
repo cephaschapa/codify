@@ -5,6 +5,24 @@ import {
   LayoutAnalysis,
   ColorPalette,
 } from "./imageAnalysis";
+import {
+  CHAKRA_EXAMPLES,
+  DESIGN_TO_CODE_EXAMPLES,
+  CHAKRA_PROPS_REFERENCE,
+} from "./codeExamples";
+import {
+  COMPONENT_DETECTION_PATTERNS,
+  LAYOUT_DETECTION_PATTERNS,
+  COLOR_ANALYSIS_PATTERNS,
+  FORM_PATTERNS,
+  CHAKRA_BEST_PRACTICES,
+  enhanceComponentDetection,
+} from "./advancedPatterns";
+import {
+  CHAKRA_V3_COMPONENTS,
+  CHAKRA_V3_COMPOSITION_PATTERNS,
+  CHAKRA_V3_BEST_PRACTICES,
+} from "./chakraV3Reference";
 
 export interface VisionAnalysisConfig {
   apiKey?: string;
@@ -75,7 +93,97 @@ export class VisionAnalyzer {
   }
 
   private buildAnalysisPrompt(): string {
-    return `Analyze this UI design image and provide a detailed JSON response with the following structure:
+    return `You are an expert ChakraUI v3 developer. Analyze this UI design image and extract components using EXACT ChakraUI v3 patterns.
+
+## OFFICIAL CHAKRA UI V3 DOCUMENTATION REFERENCE:
+
+### LAYOUT COMPONENTS:
+- **Box**: Low-level div with style props (foundation for all components)
+- **Container**: Constrains content to max-width that adapts to breakpoints
+- **Flex**: CSS flexbox with direction, align, justify, gap props  
+- **Stack**: Stacks children with consistent spacing (direction, spacing props)
+- **SimpleGrid**: Responsive grids (columns, minChildWidth, spacing props)
+- **Grid**: Full grid control (templateColumns, templateRows, gap)
+- **Center**: Centers children using flexbox
+- **AspectRatio**: Maintains ratio for media (ratio prop)
+
+### BUTTON COMPONENTS:
+- **Button**: Standard button (variant, size, colorPalette, loading props)
+  - Variants: solid, outline, ghost, subtle, surface
+  - Sizes: xs, sm, md, lg, xl
+  - Props: colorPalette (NOT colorScheme), loading, loadingText
+- **IconButton**: Icon-only button (REQUIRES aria-label)
+- **ButtonGroup**: Groups buttons (spacing, orientation, attached props)
+
+### FORM COMPONENTS (CRITICAL - USE V3 PATTERNS):
+- **Field**: Form control structure with Field.Root, Field.Label, Field.HelpText, Field.ErrorText
+- **Input**: Standard text input (size, variant, placeholder, type props)
+- **Textarea**: Multiline input (rows, resize, placeholder props)
+- **Select**: Custom select with Select.Root > Select.Trigger > Select.Content > Select.Item
+- **Checkbox**: Multi-select with Checkbox.Root > Checkbox.Control > Checkbox.Label
+- **Radio**: Single select with Radio.Root > Radio.Control > Radio.Label  
+- **Switch**: Toggle with size, colorPalette, checked props
+
+### DATA DISPLAY COMPONENTS:
+- **Card**: Content container with Card.Root > Card.Header > Card.Body > Card.Footer
+- **Avatar**: User photo/initials with Avatar.Root > Avatar.Image > Avatar.Fallback
+- **Badge**: Status indicators (variant, colorPalette, size props)
+- **Table**: Data tables with Table.Root > Table.Header > Table.Body structure
+
+### FEEDBACK COMPONENTS:
+- **Alert**: Status messages with Alert.Root > Alert.Indicator > Alert.Title > Alert.Description
+- **Progress**: Completion indicators (value, max, colorPalette props)
+- **Spinner**: Loading indicator (thickness, speed, colorPalette props)
+
+### TYPOGRAPHY:
+- **Heading**: Semantic headings (size: xs to 6xl, as prop for h1-h6)
+- **Text**: General text (fontSize, fontWeight, color, truncate props)
+- **Link**: Navigation links (href, isExternal, variant props)
+
+## MANDATORY V3 COMPOSITION PATTERNS:
+
+### FORM FIELD (ALWAYS USE THIS FOR INPUTS):
+\`\`\`jsx
+<Field.Root required={isRequired}>
+  <Field.Label>Label Text</Field.Label>
+  <Input type="email" placeholder="Enter email" size="md" />
+  <Field.HelpText>Helper text</Field.HelpText>
+  <Field.ErrorText>Error message</Field.ErrorText>
+</Field.Root>
+\`\`\`
+
+### CARD STRUCTURE:
+\`\`\`jsx
+<Card.Root>
+  <Card.Header>
+    <Heading size="md">Title</Heading>
+  </Card.Header>
+  <Card.Body>
+    <Text>Content</Text>
+  </Card.Body>
+  <Card.Footer>
+    <Button>Action</Button>
+  </Card.Footer>
+</Card.Root>
+\`\`\`
+
+### ALERT PATTERN:
+\`\`\`jsx
+<Alert.Root status="info">
+  <Alert.Indicator />
+  <Alert.Title>Title</Alert.Title>
+  <Alert.Description>Description</Alert.Description>
+</Alert.Root>
+\`\`\`
+
+## CRITICAL DIFFERENCES FROM V2:
+1. **colorPalette** instead of colorScheme
+2. **Compound components** (.Root, .Label, .Content patterns)
+3. **Field.Root** instead of FormControl
+4. **Card.Root/Card.Body** instead of Card/CardBody
+5. **Alert.Root/Alert.Title** instead of Alert/AlertTitle
+
+## REQUIRED JSON STRUCTURE:
 
 {
   "colors": {
@@ -161,50 +269,192 @@ export class VisionAnalyzer {
   }
 }
 
-Instructions:
-1. Identify ALL UI elements with precise classification: buttons, headings, text, inputs, textareas, selects, checkboxes, radios, switches, cards, images, badges, alerts, links, lists, tables, avatars, icons, dividers, breadcrumbs, steppers, tabs, accordions, menus, modals, tooltips, progress bars, spinners
-2. For BUTTONS: detect exact variant (solid/outline/ghost/link), size (xs/sm/md/lg/xl), border radius, shadow depth, hover/focus states, icon placement
-3. For TEXT & HEADINGS: precise font size (xs to 6xl), font weight (thin to black), line height, letter spacing, text decoration, color, alignment
-4. For FORM ELEMENTS: 
-   - Inputs: type (text/email/password/etc), placeholder text, validation states, icons, helper text
-   - Selects: options, placeholder, multi-select, styling
-   - Checkboxes/Radios: checked state, label position, custom styling
-   - Textareas: rows, resize behavior, placeholder
-5. For LAYOUT: precise gap measurements, padding values, margin, alignment, responsive behavior
-6. For VISUAL STYLING: exact border radius values, shadow types and depths, border widths, opacity levels, z-index stacking
-7. For COLORS: extract gradients (linear/radial), hover states, focus states, disabled states, theme variations
-8. For SPACING: measure exact pixel values for padding, margins, gaps between elements
-9. For CONTAINERS: detect card styling, background overlays, backdrop blur, border styles
-10. For ADVANCED ELEMENTS: badges with variants, alerts with icons, tooltips, modals with backdrops, progress indicators, loading states
-11. For FORMS: group related form elements, detect validation styling, error states, success states
-12. For NAVIGATION: detect menu types, breadcrumbs, tabs, steppers, active states
-13. Be extremely precise with measurements - provide exact pixel values for all spacing, sizing, and positioning
-14. Detect subtle visual details like inner shadows, border effects, gradient overlays, and transparency
-15. Include hover/focus/active state styling when visible or implied by design context
+## PRECISION REQUIREMENTS:
 
-Respond ONLY with valid JSON, no additional text.`;
+1. **EXACT COMPONENT MATCHING**: Use the EXACT ChakraUI component names and props shown in the examples above
+2. **PRECISE MEASUREMENTS**: Convert pixel measurements to Chakra spacing units (8px = 2, 16px = 4, 24px = 6, 32px = 8)
+3. **ACCURATE COLOR EXTRACTION**: Use actual hex colors from the design, not approximations
+4. **PROPER PROP SYNTAX**: Follow Chakra v3 prop patterns exactly as shown in examples
+
+## DETAILED ANALYSIS INSTRUCTIONS:
+
+### BUTTONS (Follow examples above exactly):
+- Detect variant: solid, outline, ghost, link
+- Measure size: xs (24px), sm (32px), md (40px), lg (48px), xl (56px)
+- Extract exact colors: bg, text, border, hover states
+- Detect border radius: none, sm, md, lg, xl, full
+- Measure shadows: none, xs, sm, md, lg, xl, 2xl
+- Include hover/focus effects
+
+### FORM ELEMENTS (Use FormControl pattern):
+- Wrap inputs in FormControl with proper labels
+- Detect input types: text, email, password, number, tel, url
+- Extract placeholder text exactly as shown
+- Include validation states: isRequired, isInvalid
+- Add proper focus styles with borderColor and boxShadow
+- Include FormHelperText and FormErrorMessage when appropriate
+
+### LAYOUT (Use proper containers):
+- VStack for vertical layouts with exact spacing
+- HStack for horizontal layouts with proper alignment
+- SimpleGrid for grid layouts with responsive columns
+- Measure gaps in Chakra units (gap in pixels ÷ 4)
+- Include alignment props: align, justify, wrap
+
+### CARDS (Follow card structure):
+- Use Card, CardBody, CardHeader, CardFooter components
+- Include proper padding (p={4}, p={5}, p={6})
+- Add shadows and border radius
+- Include overflow="hidden" for images
+
+### TYPOGRAPHY (Precise sizing):
+- Heading: size="xs|sm|md|lg|xl|2xl|3xl|4xl"
+- Text: fontSize="xs|sm|md|lg|xl|2xl|3xl|4xl"
+- FontWeight: thin|light|normal|medium|semibold|bold|extrabold|black
+- Include proper spacing with mb, mt props
+
+### COLORS (Exact extraction):
+- Extract EXACT hex colors from design
+- Use proper Chakra color props: bg, color, borderColor
+- Include hover states: _hover={{ bg: "color" }}
+- Include focus states: _focus={{ borderColor: "color", boxShadow: "0 0 0 1px color" }}
+
+### SPACING (Chakra units):
+- Convert pixels to Chakra spacing: 4px=1, 8px=2, 12px=3, 16px=4, 20px=5, 24px=6, 32px=8
+- Use proper spacing props: p, pt, pr, pb, pl, m, mt, mr, mb, ml
+- Include gaps: spacing for stacks, gap for grids
+
+CRITICAL: Output should be PRODUCTION-READY ChakraUI v3 code that can be copy-pasted and used immediately.
+
+## REQUIRED RESPONSE FORMAT:
+- Respond with ONLY a valid JSON object
+- Start immediately with { and end with }
+- NO explanations, markdown, or text outside JSON
+- Return exact structure shown above
+- If cannot analyze: {"error": "Analysis failed"}
+
+TASK: Return ONLY valid JSON matching the structure exactly.`;
   }
 
   private parseVisionResponse(response: string): ImageAnalysisResult | null {
     try {
-      // Clean the response - sometimes GPT includes markdown code blocks
-      const jsonStr = response.replace(/```json\n?|\n?```/g, "").trim();
+      console.log(
+        "🔍 Parsing Vision AI response:",
+        response.substring(0, 200) + "..."
+      );
+
+      // Check if response indicates failure
+      if (response.includes("I'm unable") || response.includes("unable to")) {
+        console.error("❌ Vision AI cannot analyze image");
+        return null;
+      }
+
+      // Extract JSON from multiple possible formats
+      const jsonStr = this.extractJsonFromResponse(response);
+      if (!jsonStr) {
+        console.error("❌ No valid JSON found in Vision AI response");
+        return null;
+      }
+
       const parsed = JSON.parse(jsonStr);
+      console.log(
+        "✅ Successfully parsed JSON with",
+        Object.keys(parsed).length,
+        "top-level keys"
+      );
 
       // Validate and transform the response to match our interface
+      let elements = this.validateElements(parsed.elements || []);
+
+      // Apply advanced pattern enhancement
+      elements = enhanceComponentDetection(elements);
+
       const result: ImageAnalysisResult = {
         colors: this.validateColors(parsed.colors),
-        elements: this.validateElements(parsed.elements || []),
+        elements,
         layout: this.validateLayout(parsed.layout),
         dimensions: parsed.dimensions || { width: 800, height: 600 },
+        pageLayout: parsed.pageLayout,
+        patterns: parsed.patterns,
       };
 
       return result;
     } catch (error) {
       console.error("Failed to parse Vision response:", error);
       console.log("Raw response:", response);
+
+      // Try to create a fallback analysis instead of returning null
+      console.log("🆘 Attempting fallback analysis");
+      return this.createFallbackAnalysis();
+    }
+  }
+
+  private extractJsonFromResponse(response: string): string | null {
+    // Remove markdown code blocks if present
+    let cleaned = response.replace(/```json\n?|\n?```/g, "").trim();
+
+    // Look for JSON object/array pattern
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      cleaned = jsonMatch[0];
+    }
+
+    // If it's not valid JSON, try to find JSON boundaries by looking for { and }
+    const firstBrace = cleaned.indexOf("{");
+    const lastBrace = cleaned.lastIndexOf("}");
+
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+    }
+
+    // Validate it's valid JSON
+    try {
+      JSON.parse(cleaned);
+      return cleaned;
+    } catch {
+      console.warn(
+        "⚠️ Response not valid JSON, trying to fix:",
+        cleaned.substring(0, 100)
+      );
       return null;
     }
+  }
+
+  private createFallbackAnalysis(): ImageAnalysisResult {
+    console.log("🆘 Creating fallback analysis structure");
+    return {
+      colors: {
+        dominant: "#3B82F6",
+        background: "#FFFFFF",
+        text: "#1F2937",
+        accent: "#10B981",
+        palette: ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6"],
+      },
+      elements: [],
+      layout: {
+        type: "absolute" as const,
+        direction: "column" as const,
+        alignment: "start" as const,
+        gap: 16,
+        padding: 24,
+      },
+      dimensions: { width: 800, height: 600 },
+      pageLayout: undefined,
+      patterns: {
+        isForm: false,
+        isNavigation: false,
+        isCard: false,
+        isList: false,
+        isModal: false,
+        isHeader: false,
+        isFooter: false,
+        isSidebar: false,
+        isLandingPage: false,
+        isDashboard: false,
+        isBlogPost: false,
+        isProfilePage: false,
+      },
+    };
   }
 
   private validateColors(colors: any): ColorPalette {
@@ -365,8 +615,8 @@ function generateSmartImports(elements: DetectedElement[]): string {
         break;
       case "text":
         if (
-          element.properties?.fontSize === "xl" ||
-          element.properties?.fontWeight === "bold"
+          element.styling?.fontSize === "xl" ||
+          element.styling?.fontWeight === "bold"
         ) {
           baseImports.add("Heading");
         }
@@ -465,7 +715,7 @@ function generateSmartElement(
           : "sm");
       const buttonContent = element.content || `Button ${index + 1}`;
 
-      elementCode = `${indent}<Button\n${indent}  variant="${variant}"\n${indent}  size="${size}"\n${indent}  colorScheme="blue"\n${indent}>\n${indent}  ${buttonContent}\n${indent}</Button>\n`;
+      elementCode = `${indent}<Button\n${indent}  variant="${variant}"\n${indent}  size="${size}"\n${indent}  colorPalette="blue"\n${indent}>\n${indent}  ${buttonContent}\n${indent}</Button>\n`;
       break;
 
     case "text":

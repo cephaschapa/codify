@@ -6,6 +6,7 @@ import CodeOutput from "@/components/CodeOutput";
 import AnalysisDebug from "@/components/AnalysisDebug";
 import VisionStatus from "@/components/VisionStatus";
 import TabbedOutput from "@/components/TabbedOutput";
+import AnalysisFlow from "@/components/AnalysisFlow";
 import { Upload, Code, Eye } from "lucide-react";
 import { ImageAnalyzer, ImageAnalysisResult } from "@/utils/imageAnalysis";
 import {
@@ -14,6 +15,8 @@ import {
 } from "@/utils/visionAnalysis";
 import { generatePageLayout, GeneratedPage } from "@/utils/pageLayoutGenerator";
 import { generateDetailedChakraCode } from "@/utils/detailedCodeGenerator";
+import { CodeRefinementEngine } from "@/utils/codeRefinement";
+import { generateChakraV3Code } from "@/utils/chakraV3Generator";
 
 export default function Home() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -27,6 +30,7 @@ export default function Home() {
   const [generatedPage, setGeneratedPage] = useState<GeneratedPage | null>(
     null
   );
+  const [codeQuality, setCodeQuality] = useState<number>(0);
 
   const handleImageUpload = async (imageUrl: string) => {
     setUploadedImage(imageUrl);
@@ -83,15 +87,41 @@ export default function Home() {
         setAnalysisResult(analysis);
         setAnalysisMethod(method);
 
-        // Generate both component and page layouts
+        // Generate page layouts (which will handle component generation with v3 patterns)
         const pageLayout = generatePageLayout(analysis);
         setGeneratedPage(pageLayout);
 
-        // Generate code using the detailed generator for maximum precision
-        const generatedCode =
+        // Generate initial code using pure v3 patterns - must match generatedPage for consistency
+        let generatedCode =
           method === "vision"
-            ? generateDetailedChakraCode(analysis)
+            ? generateChakraV3Code(analysis)
             : generateChakraCode(analysis);
+
+        console.log(
+          "🔧 Generated code method:",
+          method === "vision" ? "generateChakraV3Code" : "generateChakraCode"
+        );
+
+        // Refine the code for maximum accuracy
+        if (method === "vision") {
+          console.log("🔄 Refining code for maximum accuracy...");
+          const refinementEngine = new CodeRefinementEngine();
+          const refinedResult = await refinementEngine.refineGeneratedCode(
+            generatedCode,
+            analysis
+          );
+
+          generatedCode = refinedResult.finalCode;
+          setCodeQuality(refinedResult.qualityScore);
+
+          console.log(
+            `✨ Code quality improved to ${refinedResult.qualityScore}%`
+          );
+          console.log(
+            "Refinement iterations:",
+            refinedResult.iterations.length
+          );
+        }
 
         setGeneratedCode(generatedCode);
       } else {
@@ -477,6 +507,7 @@ export const GeneratedComponent = () => {
                         setAnalysisResult(null);
                         setAnalysisMethod("canvas");
                         setGeneratedPage(null);
+                        setCodeQuality(0);
                       }}
                       className="text-sm text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded-lg transition-colors"
                     >
@@ -491,6 +522,12 @@ export const GeneratedComponent = () => {
                     className="w-full h-auto rounded-xl shadow-md"
                   />
                   <AnalysisDebug analysis={analysisResult} />
+                  <AnalysisFlow
+                    analysis={analysisResult}
+                    generatedPage={generatedPage}
+                    analysisMethod={analysisMethod}
+                    codeQuality={codeQuality}
+                  />
                 </div>
               </div>
 
@@ -501,11 +538,26 @@ export const GeneratedComponent = () => {
                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                     <span>Generated Code</span>
                   </h3>
-                  <div className="flex items-center space-x-2 bg-gray-100 px-3 py-1 rounded-lg">
-                    <Eye className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm font-medium text-gray-700">
-                      ChakraUI
-                    </span>
+                  <div className="flex items-center space-x-2">
+                    {codeQuality > 0 && (
+                      <div
+                        className={`px-2 py-1 rounded text-xs font-medium ${
+                          codeQuality >= 85
+                            ? "bg-green-100 text-green-700"
+                            : codeQuality >= 70
+                            ? "bg-yellow-100 text-yellow-700"
+                            : "bg-red-100 text-red-700"
+                        }`}
+                      >
+                        {codeQuality}% Quality
+                      </div>
+                    )}
+                    <div className="flex items-center space-x-2 bg-gray-100 px-3 py-1 rounded-lg">
+                      <Eye className="w-4 h-4 text-gray-500" />
+                      <span className="text-sm font-medium text-gray-700">
+                        ChakraUI
+                      </span>
+                    </div>
                   </div>
                 </div>
                 <TabbedOutput

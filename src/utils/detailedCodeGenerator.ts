@@ -3,6 +3,7 @@ import {
   ColorPalette,
   ImageAnalysisResult,
 } from "./imageAnalysis";
+import { CHAKRA_V3_COMPOSITION_PATTERNS } from "./chakraV3Reference";
 
 export function generateDetailedChakraCode(
   analysis: ImageAnalysisResult
@@ -41,13 +42,7 @@ function generateComprehensiveImports(elements: DetectedElement[]): string {
         break;
       case "input":
         imports.add("Input");
-        imports.add("InputGroup");
-        imports.add("InputLeftElement");
-        imports.add("InputRightElement");
-        imports.add("FormControl");
-        imports.add("FormLabel");
-        imports.add("FormHelperText");
-        imports.add("FormErrorMessage");
+        imports.add("Field");
         break;
       case "textarea":
         imports.add("Textarea");
@@ -75,9 +70,6 @@ function generateComprehensiveImports(elements: DetectedElement[]): string {
         break;
       case "card":
         imports.add("Card");
-        imports.add("CardHeader");
-        imports.add("CardBody");
-        imports.add("CardFooter");
         break;
       case "image":
         imports.add("Image");
@@ -337,13 +329,17 @@ function generateDetailedElement(
       const isInputDisabled = element.formProperties?.disabled;
       const validation = element.formProperties?.validation;
 
-      elementCode = `${indent}<FormControl`;
-      if (isRequired) elementCode += ` isRequired`;
-      if (validation === "error") elementCode += ` isInvalid`;
+      elementCode = `${indent}<Field.Root`;
+      if (isRequired) elementCode += ` required`;
+      if (validation === "error") elementCode += ` invalid`;
       elementCode += `>\n`;
+
       if (element.accessibility?.ariaLabel) {
-        elementCode += `${indent}  <FormLabel>${element.accessibility.ariaLabel}</FormLabel>\n`;
+        elementCode += `${indent}  <Field.Label>${element.accessibility.ariaLabel}</Field.Label>\n`;
+      } else {
+        elementCode += `${indent}  <Field.Label>Input Label</Field.Label>\n`;
       }
+
       elementCode += `${indent}  <Input\n`;
       elementCode += `${indent}    type="${inputType}"\n`;
       elementCode += `${indent}    placeholder="${placeholder}"\n`;
@@ -354,13 +350,16 @@ function generateDetailedElement(
         elementCode += `${indent}    borderWidth="${borderWidth}" borderColor="${borderColor}"\n`;
       if (focusColor)
         elementCode += `${indent}    _focus={{ borderColor: "${focusColor}", boxShadow: "0 0 0 1px ${focusColor}" }}\n`;
-      if (isInputDisabled) elementCode += `${indent}    isDisabled\n`;
+      if (isInputDisabled) elementCode += `${indent}    disabled\n`;
       if (marginProps) elementCode += `${indent}    ${marginProps}\n`;
       elementCode += `${indent}  />\n`;
+
+      elementCode += `${indent}  <Field.HelpText>Helper text for this field</Field.HelpText>\n`;
+
       if (validation === "error") {
-        elementCode += `${indent}  <FormErrorMessage>This field is required</FormErrorMessage>\n`;
+        elementCode += `${indent}  <Field.ErrorText>This field is required</Field.ErrorText>\n`;
       }
-      elementCode += `${indent}</FormControl>\n`;
+      elementCode += `${indent}</Field.Root>\n`;
       break;
 
     case "textarea":
@@ -446,7 +445,7 @@ function generateDetailedElement(
       break;
 
     case "card":
-      elementCode = `${indent}<Card\n`;
+      elementCode = `${indent}<Card.Root\n`;
       elementCode += `${indent}  bg="${bgColor}"\n`;
       elementCode += `${indent}  borderRadius="${borderRadius}"\n`;
       if (shadow !== "none") elementCode += `${indent}  shadow="${shadow}"\n`;
@@ -454,12 +453,12 @@ function generateDetailedElement(
         elementCode += `${indent}  borderWidth="${borderWidth}" borderColor="${borderColor}"\n`;
       if (marginProps) elementCode += `${indent}  ${marginProps}\n`;
       elementCode += `${indent}>\n`;
-      elementCode += `${indent}  <CardBody>\n`;
+      elementCode += `${indent}  <Card.Body>\n`;
       elementCode += `${indent}    <Text color="${textColor}">${
         element.content || `Card content ${index + 1}`
       }</Text>\n`;
-      elementCode += `${indent}  </CardBody>\n`;
-      elementCode += `${indent}</Card>\n`;
+      elementCode += `${indent}  </Card.Body>\n`;
+      elementCode += `${indent}</Card.Root>\n`;
       break;
 
     case "badge":
